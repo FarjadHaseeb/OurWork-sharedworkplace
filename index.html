@@ -52,11 +52,13 @@
     <!-- Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-    <!--
-        CREDENTIALS — loaded from config.js (gitignored, never pushed to GitHub).
-        If config.js is missing, copy config.example.js → config.js and fill in your keys.
-    -->
-    <script src="./config.js"></script>
+    <script>
+        document.write(
+            window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? '<script src="./config.js"><\/script>'
+                : '<script src="/api/config.js"><\/script>'
+        );
+    </script>
 </head>
 
 <body class="min-h-screen">
@@ -64,7 +66,6 @@
     <div id="custom-cursor"></div>
     <div id="root"></div>
 
-    <!-- App Logic (JSX transpiled at runtime by Babel Standalone) -->
     <script type="text/babel" src="./app.js"></script>
 </body>
 

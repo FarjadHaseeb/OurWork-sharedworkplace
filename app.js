@@ -1,7 +1,7 @@
 
 const { useState, useEffect } = React;
 
-// ── Initialize Supabase client ──────────────────────────────
+// ── Initialize Supabase client ───────
 const supabase = window.supabase.createClient(
     window.SUPABASE_URL,
     window.SUPABASE_ANON_KEY
@@ -44,7 +44,7 @@ function App() {
     const [commentsLoading, setCommentsLoading] = useState(false);
     const [commentAuthor, setCommentAuthor] = useState('Farjad');
 
-    // ── Custom cursor tracking ──────────────────────────────
+    // ── Custom cursor tracking ────
     useEffect(() => {
         const handleMouseMove = (e) => setCursorPos({ x: e.clientX, y: e.clientY });
         const handleMouseOver = (e) => {
@@ -58,7 +58,7 @@ function App() {
         };
     }, []);
 
-    // ── Stopwatch: tick ongoing tasks every second ──────────
+    // ── Stopwatch-
     useEffect(() => {
         const interval = setInterval(() => {
             setTasks(prev => prev.map(t =>
@@ -70,11 +70,10 @@ function App() {
         return () => clearInterval(interval);
     }, []);
 
-    // ── Fetch tasks from Supabase on mount ─────────────────
+    // ── Fetch tasks from Supabase on mount 
     useEffect(() => {
         fetchTasks();
 
-        // Real-time subscription: reflect other users' changes instantly
         const channel = supabase
             .channel('tasks-realtime')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'shared_tasks' }, () => {
@@ -124,7 +123,7 @@ function App() {
         });
     };
 
-    // ── CREATE task ─────────────────────────────────────────
+    // ── CREATE task ───
     const handleCreateTask = async (e) => {
         e.preventDefault();
         setCreateError('');
@@ -149,7 +148,7 @@ function App() {
         if (data && data.length > 0) {
             setTasks(prev => [data[0], ...prev]);
         } else {
-            fetchTasks(); // Fallback if insert succeeds but select() fails due to RLS
+            fetchTasks(); 
         }
 
         logAction(newTaskAssignee, `created task "${newTaskTitle}"`);
@@ -158,7 +157,7 @@ function App() {
         setIsNewTaskOpen(false);
     };
 
-    // ── VIEW TASK DETAILS (and fetch comments) ─────────────────
+    // ── VIEW TASK DETAILS (and fetch comments) ────
     const openTaskDetails = async (task) => {
         setViewTask(task);
         setCommentsLoading(true);
@@ -177,7 +176,7 @@ function App() {
         setCommentsLoading(false);
     };
 
-    // ── POST COMMENT ──────────────────────────────────────────
+    // ── POST COMMENT ─────
     const handlePostComment = async (e) => {
         if (e) e.preventDefault();
         if (!newCommentText.trim() || !viewTask) return;
@@ -202,15 +201,13 @@ function App() {
         }
     };
 
-    // ── UPDATE task status ─────────────────────────────────
-    // Map app status → DB status before writing
+    // ── UPDATE task status ───
     const toDbStatus = (appStatus) => {
         if (appStatus === 'completed') return 'done';
-        return appStatus; // 'pending', 'ongoing', and 'deleted' stay as-is
+        return appStatus; // 'pending', 'ongoing', and 'deleted' 
     };
 
     const updateTaskStatus = async (id, newStatus, actor = 'System') => {
-        // Only send status to DB — avoid failing if columns like completed_at don't exist
         const dbUpdate = { status: toDbStatus(newStatus) };
 
         const { error } = await supabase.from('shared_tasks').update(dbUpdate).eq('id', id);
@@ -219,7 +216,6 @@ function App() {
 
         setTasks(prev => prev.map(t => {
             if (t.id !== id) return t;
-            // Use app-side newStatus for local state (not DB value)
             const updated = { ...t, status: newStatus };
             if (newStatus === 'completed') {
                 confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -255,7 +251,7 @@ function App() {
         logAction('System', `deleted task "${title}"`);
     };
 
-    // ── RESTORE task from Local Trash Archive ───────────────
+    // ── RESTORE task from Local Trash Archive ────
     const restoreTask = async (id, title) => {
         const taskToRestore = deletedTasks.find(t => t.id === id);
         if (!taskToRestore) return;
@@ -279,7 +275,7 @@ function App() {
         logAction('System', `restored task "${title}" from trash`);
     };
 
-    // ── PERMANENT DELETE (Clear from local archive) ─────────
+    // ── PERMANENT DELETE (Clear from local archive) ──────
     const permanentDeleteTask = async (id, title) => {
         const newTrash = deletedTasks.filter(t => t.id !== id);
         setDeletedTasks(newTrash);
@@ -287,7 +283,7 @@ function App() {
         logAction('System', `cleared task "${title}" from local trash`);
     };
 
-    // ── Helpers ─────────────────────────────────────────────
+    // ── Helpers ──────────
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
@@ -311,7 +307,7 @@ function App() {
         }
     };
 
-    // ── Render ──────────────────────────────────────────────
+    // ── Render ───
     return (
         <div className="min-h-screen pb-16">
             {/* Floating custom cursor */}
