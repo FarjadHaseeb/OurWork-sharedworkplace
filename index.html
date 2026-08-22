@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Our Work - Shared Work Manager </title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0A0D14">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- App Styles -->
+    <link rel="stylesheet" href="./styles.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0A0D14',
+                        glassDark: 'rgba(18, 24, 38, 0.7)',
+                        neonMint: '#10B981',
+                        neonAmber: '#F59E0B',
+                        neonCoral: '#FF5252',
+                        neonMagenta: '#E11D48',
+                        indigoGlow: '#6366F1'
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- React & JSX transpiler -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!--
+        CREDENTIALS — loaded from config.js (gitignored, never pushed to GitHub).
+        If config.js is missing, copy config.example.js → config.js and fill in your keys.
+    -->
+    <script src="./config.js"></script>
+</head>
+
+<body class="min-h-screen">
+    <div class="mesh-bg"></div>
+    <div id="custom-cursor"></div>
+    <div id="root"></div>
+
+    <!-- App Logic (JSX transpiled at runtime by Babel Standalone) -->
+    <script type="text/babel" src="./app.js"></script>
+</body>
+
+</html>
