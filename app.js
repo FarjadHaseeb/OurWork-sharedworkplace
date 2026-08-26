@@ -7,14 +7,13 @@ const supabase = window.supabase.createClient(
 );
 
 function App() {
-    // ── Login / session state ─────
+    // ── Login / session state
     const [currentUser, setCurrentUser] = useState(() => {
         return localStorage.getItem('ourWork_currentUser') || null;
     });
     const [loginUsername, setLoginUsername] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
     const [loginError, setLoginError] = useState('');
-
     const handleLogin = (e) => {
         e.preventDefault();
         const uname = loginUsername.trim().toLowerCase();
