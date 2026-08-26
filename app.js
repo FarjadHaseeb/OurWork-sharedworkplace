@@ -1,13 +1,42 @@
-
 const { useState, useEffect } = React;
 
-// ── Initialize Supabase client ───────
+// ── Initialize Supabase client ───
 const supabase = window.supabase.createClient(
     window.SUPABASE_URL,
     window.SUPABASE_ANON_KEY
 );
 
 function App() {
+    // ── Login / session state ─────
+    const [currentUser, setCurrentUser] = useState(() => {
+        return localStorage.getItem('ourWork_currentUser') || null;
+    });
+    const [loginUsername, setLoginUsername] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
+    const [loginError, setLoginError] = useState('');
+
+    const handleLogin = (e) => {
+        e.preventDefault();
+        const uname = loginUsername.trim().toLowerCase();
+        const users = window.APP_USERS || {};
+        if (users[uname] && users[uname] === loginPassword) {
+            const displayName = uname.charAt(0).toUpperCase() + uname.slice(1);
+            localStorage.setItem('ourWork_currentUser', displayName);
+            setCurrentUser(displayName);
+            setLoginError('');
+            setLoginPassword('');
+        } else {
+            setLoginError('Wrong username or password.');
+        }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('ourWork_currentUser');
+        setCurrentUser(null);
+        setLoginUsername('');
+        setLoginPassword('');
+    };
+
     const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
     const [isHovered, setIsHovered] = useState(false);
     const [tasks, setTasks] = useState([]);
@@ -44,7 +73,7 @@ function App() {
     const [commentsLoading, setCommentsLoading] = useState(false);
     const [commentAuthor, setCommentAuthor] = useState('Farjad');
 
-    // ── Custom cursor tracking ────
+    // ── Custom cursor tracking ─────────
     useEffect(() => {
         const handleMouseMove = (e) => setCursorPos({ x: e.clientX, y: e.clientY });
         const handleMouseOver = (e) => {
@@ -58,7 +87,7 @@ function App() {
         };
     }, []);
 
-    // ── Stopwatch-
+    // ── Stopwatch: tick ongoing tasks every second ──────────
     useEffect(() => {
         const interval = setInterval(() => {
             setTasks(prev => prev.map(t =>
@@ -70,7 +99,7 @@ function App() {
         return () => clearInterval(interval);
     }, []);
 
-    // ── Fetch tasks from Supabase on mount 
+    // ── Fetch tasks from Supabase on mount ─
     useEffect(() => {
         fetchTasks();
 
@@ -84,6 +113,14 @@ function App() {
         return () => supabase.removeChannel(channel);
     }, []);
 
+    // ── Default form fields to whoever is logged in ─────────
+    useEffect(() => {
+        if (currentUser) {
+            setNewTaskAssignee(currentUser);
+            setCommentAuthor(currentUser);
+        }
+    }, [currentUser]);
+
     const fetchTasks = async () => {
         setLoading(true);
         const { data, error } = await supabase
@@ -95,7 +132,6 @@ function App() {
             console.error('Error fetching tasks:', error.message);
         } else {
             console.log('📦 Raw status values from DB:', (data || []).map(t => t.status));
-            // Normalize legacy status values so they map to the correct column
             const normalized = (data || []).map(t => ({
                 ...t,
                 status: t.status === 'done' ? 'completed'
@@ -108,7 +144,7 @@ function App() {
         setLoading(false);
     };
 
-    // ── Activity log helper (local only, persisted to localStorage) ──
+    // ── Activity log helper
     const logAction = (memberName, action) => {
         setActivityLog(prev => {
             const newLog = [{
@@ -123,7 +159,7 @@ function App() {
         });
     };
 
-    // ── CREATE task ───
+    // ── CREATE task ─────────
     const handleCreateTask = async (e) => {
         e.preventDefault();
         setCreateError('');
@@ -157,7 +193,7 @@ function App() {
         setIsNewTaskOpen(false);
     };
 
-    // ── VIEW TASK DETAILS (and fetch comments) ────
+    // ── VIEW TASK DETAILS (and fetch comments) ─────────────────
     const openTaskDetails = async (task) => {
         setViewTask(task);
         setCommentsLoading(true);
@@ -176,7 +212,7 @@ function App() {
         setCommentsLoading(false);
     };
 
-    // ── POST COMMENT ─────
+    // ── POST COMMENT ──────────────────────────────────────────
     const handlePostComment = async (e) => {
         if (e) e.preventDefault();
         if (!newCommentText.trim() || !viewTask) return;
@@ -201,13 +237,15 @@ function App() {
         }
     };
 
-    // ── UPDATE task status ───
+    // ── UPDATE task status ─────────────────────────────────
+    // Map app status → DB status before writing
     const toDbStatus = (appStatus) => {
         if (appStatus === 'completed') return 'done';
-        return appStatus; // 'pending', 'ongoing', and 'deleted' 
+        return appStatus; // 'pending', 'ongoing', and 'deleted' stay as-is
     };
 
     const updateTaskStatus = async (id, newStatus, actor = 'System') => {
+        // Only send status to DB — avoid failing if columns like completed_at don't exist
         const dbUpdate = { status: toDbStatus(newStatus) };
 
         const { error } = await supabase.from('shared_tasks').update(dbUpdate).eq('id', id);
@@ -216,6 +254,7 @@ function App() {
 
         setTasks(prev => prev.map(t => {
             if (t.id !== id) return t;
+            // Use app-side newStatus for local state (not DB value)
             const updated = { ...t, status: newStatus };
             if (newStatus === 'completed') {
                 confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
@@ -251,7 +290,7 @@ function App() {
         logAction('System', `deleted task "${title}"`);
     };
 
-    // ── RESTORE task from Local Trash Archive ────
+    // ── RESTORE task from Local Trash Archive ───────────────
     const restoreTask = async (id, title) => {
         const taskToRestore = deletedTasks.find(t => t.id === id);
         if (!taskToRestore) return;
@@ -275,7 +314,7 @@ function App() {
         logAction('System', `restored task "${title}" from trash`);
     };
 
-    // ── PERMANENT DELETE (Clear from local archive) ──────
+    // ── PERMANENT DELETE (Clear from local archive) ─────────
     const permanentDeleteTask = async (id, title) => {
         const newTrash = deletedTasks.filter(t => t.id !== id);
         setDeletedTasks(newTrash);
@@ -283,7 +322,7 @@ function App() {
         logAction('System', `cleared task "${title}" from local trash`);
     };
 
-    // ── Helpers ──────────
+    // ── Helpers ─────────────────────────────────────────────
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
@@ -307,7 +346,55 @@ function App() {
         }
     };
 
-    // ── Render ───
+    // ── Login gate ──────────────────────────────────────────
+    if (!currentUser) {
+        return (
+            <div className="min-h-screen flex items-center justify-center px-4">
+                <div className="mesh-bg"></div>
+                <form onSubmit={handleLogin} className="glass-card rounded-3xl p-8 border border-white/10 w-full max-w-sm relative z-10">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-pink-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                            <span className="font-extrabold text-white text-lg">N</span>
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-indigo-200 to-pink-200 bg-clip-text text-transparent">Our Work</h1>
+                            <p className="text-xs text-slate-400">Sign in to continue</p>
+                        </div>
+                    </div>
+
+                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">Username</label>
+                    <input
+                        type="text"
+                        value={loginUsername}
+                        onChange={(e) => setLoginUsername(e.target.value)}
+                        autoFocus
+                        className="w-full bg-slate-900/80 border border-white/10 text-sm rounded-xl px-3 py-2.5 text-slate-200 mb-4 focus:outline-none focus:border-indigo-500"
+                        placeholder="farjad or ahsan"
+                    />
+
+                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">Password</label>
+                    <input
+                        type="password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        className="w-full bg-slate-900/80 border border-white/10 text-sm rounded-xl px-3 py-2.5 text-slate-200 mb-4 focus:outline-none focus:border-indigo-500"
+                        placeholder="••••••••"
+                    />
+
+                    {loginError && (
+                        <p className="text-neonCoral text-xs font-semibold mb-4">{loginError}</p>
+                    )}
+
+                    <button type="submit"
+                        className="btn-3d w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-4 py-2.5 rounded-xl">
+                        Log In
+                    </button>
+                </form>
+            </div>
+        );
+    }
+
+    // ── Render ──────────────────────────────────────────────
     return (
         <div className="min-h-screen pb-16">
             {/* Floating custom cursor */}
@@ -364,6 +451,14 @@ function App() {
                         className="btn-3d bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm px-4 py-2.5 rounded-xl border border-white/10">
                         Audit Log ({activityLog.length})
                     </button>
+
+                    <div className="flex items-center gap-2 bg-white/5 px-3 py-2 rounded-xl border border-white/10">
+                        <span className="text-sm text-slate-300">👋 {currentUser}</span>
+                        <button onClick={handleLogout}
+                            className="text-xs font-bold text-slate-400 hover:text-neonCoral">
+                            Log Out
+                        </button>
+                    </div>
                 </div>
             </header>
 
