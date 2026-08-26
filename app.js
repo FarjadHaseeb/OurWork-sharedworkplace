@@ -14,18 +14,35 @@ function App() {
     const [loginUsername, setLoginUsername] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
     const [loginError, setLoginError] = useState('');
-    const handleLogin = (e) => {
+    const [loginLoading, setLoginLoading] = useState(false);
+
+    const handleLogin = async (e) => {
         e.preventDefault();
         const uname = loginUsername.trim().toLowerCase();
-        const users = window.APP_USERS || {};
-        if (users[uname] && users[uname] === loginPassword) {
-            const displayName = uname.charAt(0).toUpperCase() + uname.slice(1);
-            localStorage.setItem('ourWork_currentUser', displayName);
-            setCurrentUser(displayName);
-            setLoginError('');
-            setLoginPassword('');
-        } else {
-            setLoginError('Wrong username or password.');
+        setLoginError('');
+        setLoginLoading(true);
+
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: uname, password: loginPassword })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                const displayName = uname.charAt(0).toUpperCase() + uname.slice(1);
+                localStorage.setItem('ourWork_currentUser', displayName);
+                setCurrentUser(displayName);
+                setLoginError('');
+                setLoginPassword('');
+            } else {
+                setLoginError('Wrong username or password.');
+            }
+        } catch (err) {
+            setLoginError('Could not reach the server. Try again.');
+        } finally {
+            setLoginLoading(false);
         }
     };
 
