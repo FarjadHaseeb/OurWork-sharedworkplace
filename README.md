@@ -48,4 +48,4 @@ Pending
 Ongoing
    |
    v
-Completed
+completed...
