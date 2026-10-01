@@ -44,8 +44,6 @@ This is made as just for the personal use for friends, doing the daily tasks. Ou
 ```text
 Pending
    |
-   v
 Ongoing
    |
-   v
-completed...
+completed
